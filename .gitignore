@@ -1,0 +1,23 @@
+node_modules
+dist
+.cache
+*.part
+
+# 本机配置与 Python 运行产物
+.env
+.env.*
+!.env.example
+*.local
+*.log
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.DS_Store
+Thumbs.db
+
+# 由 npm run setup / DownloadLive2DSDK 下载的素材
+public/assets/js
+public/models
+public/lipsync
+public/voice

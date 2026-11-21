@@ -1,0 +1,722 @@
+:root {
+  /* Cool notebook paper, blue-black ink, and one fluorescent highlighter. */
+  --paper: #f3f5f9;
+  --surface: #ffffff;
+  --ink: #1c2840;
+  --ink-soft: #5a6680;
+  --rule: #d3dbe8;
+  --stage: #e1e9f4;
+  --marker: #ffe14d;
+  --marker-wait: #fff2b3;
+  --alert: #b0263e;
+
+  --font-read: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "SimSun", serif;
+  --font-ui: "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------- Layout: the text on the left, Hiyori and her controls in a full-height column on the right ---------- */
+
+.app {
+  height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(300px, 30vw, 420px);
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas:
+    "top side"
+    "read side";
+}
+
+.topbar {
+  grid-area: top;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px clamp(16px, 4vw, 40px);
+  border-bottom: 1px solid var(--rule);
+}
+
+.doc-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-family: var(--font-read);
+  font-size: 18px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.reading {
+  grid-area: read;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- Document ---------- */
+
+.reader {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.doc {
+  max-width: 38em;
+  margin: 0 auto;
+  padding: 40px clamp(20px, 5vw, 56px) 40vh;
+  font-family: var(--font-read);
+  font-size: 19px;
+  line-height: 1.95;
+  overflow-wrap: break-word;
+}
+
+.doc h1,
+.doc h2,
+.doc h3,
+.doc h4 {
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.doc h1 { font-size: 1.6em; margin: 0 0 1em; }
+.doc h2 { font-size: 1.3em; margin: 1.8em 0 0.6em; }
+.doc h3 { font-size: 1.12em; margin: 1.5em 0 0.5em; }
+.doc h4 { font-size: 1em; margin: 1.4em 0 0.4em; }
+
+.doc p,
+.doc ul,
+.doc ol,
+.doc table,
+.doc blockquote {
+  margin: 0 0 0.9em;
+}
+
+.doc ul,
+.doc ol {
+  padding-left: 1.6em;
+}
+
+.doc blockquote {
+  padding-left: 1em;
+  border-left: 3px solid var(--rule);
+  color: var(--ink-soft);
+}
+
+.doc img {
+  max-width: 100%;
+  height: auto;
+}
+
+.doc table {
+  border-collapse: collapse;
+  font-size: 0.9em;
+}
+
+.doc td,
+.doc th {
+  border: 1px solid var(--rule);
+  padding: 0.3em 0.6em;
+  vertical-align: top;
+}
+
+.doc a {
+  color: inherit;
+  text-decoration-color: var(--ink-soft);
+}
+
+/* ---------- The highlighter ----------
+   Every sentence is a span[data-s]. The current one gets a pale marker while its audio is on the way,
+   then a bright marker sweeps over it for exactly as long as the audio plays.
+   An inline background spanning several lines is laid out as one long strip, so a 0 → 100% sweep
+   runs line by line, like a pen. */
+
+.doc [data-s] {
+  cursor: pointer;
+  border-radius: 0.12em;
+  transition: background-color 0.15s;
+}
+
+.doc [data-s]:hover {
+  background-color: rgb(28 40 64 / 0.06);
+}
+
+.doc [data-s].is-current {
+  background-color: transparent;
+  background-image:
+    linear-gradient(transparent 16%, var(--marker) 16%, var(--marker) 96%, transparent 96%),
+    linear-gradient(transparent 16%, var(--marker-wait) 16%, var(--marker-wait) 96%, transparent 96%);
+  background-repeat: no-repeat;
+  background-size: 0% 100%, 100% 100%;
+}
+
+.doc [data-s].is-sweeping {
+  animation: marker-sweep var(--sweep-duration, 2s) linear var(--sweep-delay, 0s) forwards;
+}
+
+.reader.is-paused .doc [data-s].is-sweeping {
+  animation-play-state: paused;
+}
+
+@keyframes marker-sweep {
+  from { background-size: 0% 100%, 100% 100%; }
+  to { background-size: 100% 100%, 100% 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .doc [data-s].is-sweeping {
+    animation: none;
+    background-size: 100% 100%, 100% 100%;
+  }
+}
+
+/* ---------- Empty state ---------- */
+
+.empty {
+  max-width: 30em;
+  margin: 16vh auto 0;
+  padding: 40px clamp(20px, 5vw, 48px);
+  border: 1.5px dashed var(--rule);
+  border-radius: 16px;
+}
+
+.empty-title {
+  margin: 0 0 12px;
+  font-family: var(--font-read);
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.empty-text {
+  margin: 0 0 24px;
+  color: var(--ink-soft);
+  font-size: 16px;
+  line-height: 1.8;
+}
+
+.empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.empty-error,
+.banner-error {
+  color: var(--alert);
+}
+
+.empty-error {
+  margin: 20px 0 0;
+}
+
+.banner-error {
+  margin: 0;
+  padding: 10px clamp(16px, 4vw, 40px);
+  border-bottom: 1px solid var(--rule);
+  background: #fbeef0;
+}
+
+/* ---------- Hiyori's column ---------- */
+
+.companion {
+  grid-area: side;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  background: var(--stage);
+  border-left: 1px solid var(--rule);
+}
+
+.stage {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--stage);
+}
+
+.stage-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.stage-canvas canvas {
+  display: block;
+}
+
+.stage-note {
+  position: absolute;
+  inset: auto 20px 20px;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.7;
+  text-align: center;
+}
+
+.stage-note.is-error {
+  inset: 50% 20px auto;
+  transform: translateY(-50%);
+  color: var(--alert);
+}
+
+.stage-framing {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 4px 10px;
+  border: 1px solid rgb(28 40 64 / 0.15);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.7);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.stage-framing:hover {
+  background: var(--surface);
+}
+
+/* ---------- Controls ---------- */
+
+.controls {
+  padding: 16px 20px 20px;
+  border-top: 1px solid rgb(28 40 64 / 0.1);
+}
+
+.transport {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
+.icon-btn,
+.play-btn {
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.icon-btn {
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgb(28 40 64 / 0.2);
+  background: transparent;
+  color: var(--ink);
+}
+
+.icon-btn:hover:not(:disabled) {
+  background: rgb(255 255 255 / 0.6);
+}
+
+.play-btn {
+  width: 64px;
+  height: 64px;
+  border: 0;
+  background: var(--ink);
+  color: var(--surface);
+}
+
+.play-btn:focus-visible,
+.icon-btn:focus-visible {
+  outline-offset: 3px;
+}
+
+.icon-btn:disabled,
+.play-btn:disabled,
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.progress {
+  margin-top: 16px;
+}
+
+.progress-track {
+  height: 4px;
+  border-radius: 2px;
+  background: rgb(28 40 64 / 0.12);
+  overflow: hidden;
+}
+
+.progress-fill {
+  display: block;
+  height: 100%;
+  background: var(--ink);
+  transform-origin: left center;
+  transition: transform 0.3s ease-out;
+}
+
+.progress-text {
+  margin: 6px 0 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.progress-track.is-prepare {
+  height: 2px;
+  margin-top: 12px;
+}
+
+.progress-track.is-prepare .progress-fill {
+  background: var(--ink-soft);
+}
+
+.progress-text.is-error {
+  color: var(--alert);
+}
+
+.status {
+  min-height: 1.6em;
+  margin: 8px 0 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.status.is-error {
+  color: var(--alert);
+  text-align: left;
+}
+
+.link-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* ---------- Buttons ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: 14px;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.btn:hover:not(:disabled) {
+  border-color: var(--ink-soft);
+}
+
+.btn:focus-within:has(input:focus-visible) {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.btn-primary {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--surface);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #2a3a5a;
+}
+
+/* ---------- Settings dialog ---------- */
+
+.settings {
+  width: min(520px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 24px 60px rgb(28 40 64 / 0.25);
+}
+
+.settings::backdrop {
+  background: rgb(28 40 64 / 0.35);
+}
+
+.settings-body {
+  padding: 20px 24px 22px;
+}
+
+.settings-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.settings-head h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.icon-close {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.icon-close:hover {
+  background: var(--paper);
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 16px;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.field-label {
+  padding: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.field small {
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.field input[type="text"],
+.field select,
+.field textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: 14px;
+}
+
+.field textarea {
+  resize: vertical;
+}
+
+.field input[type="range"] {
+  width: 100%;
+  accent-color: var(--ink);
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  accent-color: var(--ink);
+}
+
+.prompt-file {
+  margin: 0;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.field-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.settings-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--rule);
+}
+
+.settings-status {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+/* ---------- Drag and drop ---------- */
+
+.drop-hint {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  background: rgb(243 245 249 / 0.85);
+  pointer-events: none;
+}
+
+.drop-hint p {
+  margin: 0;
+  padding: 18px 28px;
+  border: 2px dashed var(--ink);
+  border-radius: 16px;
+  background: var(--surface);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress-fill,
+  .doc [data-s] {
+    transition: none;
+  }
+}
+
+/* ---------- Phones: Hiyori on top, the text in the middle, the controls at the bottom ---------- */
+
+@media (max-width: 760px) {
+  .app {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto clamp(200px, 32vh, 300px) minmax(0, 1fr) auto;
+    grid-template-areas:
+      "top"
+      "stage"
+      "read"
+      "controls";
+  }
+
+  .topbar {
+    padding: 10px 16px;
+    gap: 10px;
+  }
+
+  .doc-title {
+    font-size: 16px;
+  }
+
+  .topbar-actions .btn {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+
+  .companion {
+    display: contents;
+  }
+
+  .stage {
+    grid-area: stage;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .controls {
+    grid-area: controls;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 16px;
+    align-items: center;
+    padding: 10px 16px calc(12px + env(safe-area-inset-bottom));
+    background: var(--stage);
+  }
+
+  .transport {
+    grid-row: span 2;
+    gap: 10px;
+  }
+
+  .play-btn {
+    width: 52px;
+    height: 52px;
+  }
+
+  .icon-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .progress {
+    margin-top: 0;
+  }
+
+  .progress-text,
+  .status {
+    text-align: left;
+  }
+
+  .status {
+    margin-top: 2px;
+  }
+
+  .doc {
+    padding-top: 24px;
+    padding-bottom: 30vh;
+    font-size: 18px;
+  }
+
+  .empty {
+    margin-top: 6vh;
+  }
+}
